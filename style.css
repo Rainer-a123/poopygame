@@ -1,0 +1,58 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background-color: #8b4513; /* Brown background */
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#player {
+  position: absolute;
+  font-size: 40px; /* Bigger emoji */
+  user-select: none; /* Prevent text selection */
+}
+
+.poop {
+  position: absolute;
+  font-size: 30px; /* Poop emoji size */
+  user-select: none;
+}
+
+.poop-health-bar {
+  position: absolute;
+  width: 30px;
+  height: 5px;
+  background-color: red;
+  top: -10px; /* Position above the poop */
+  left: 0;
+}
+
+.poop-health-bar-inner {
+  height: 100%;
+  background-color: #90ee90; /* Light green health bar */
+}
+
+.toilet-paper {
+  position: absolute;
+  font-size: 20px; /* Toilet paper emoji size */
+  user-select: none;
+}
+
+#ui {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: white;
+  font-size: 20px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  font-size: 16px;
+}

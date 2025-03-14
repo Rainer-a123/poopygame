@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poop Survival Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game">
+    <div id="player">🚽</div> <!-- Toilet as player -->
+    <div id="poop-container"></div>
+    <div id="toilet-paper-container"></div> <!-- Container for toilet paper shots -->
+  </div>
+  <div id="ui">
+    <p>Points: <span id="points">0</span></p>
+    <p>Health: <span id="health">100</span></p>
+    <p>Wave: <span id="wave">1</span></p>
+    <button onclick="buyUpgrade('speed')">Buy Speed Upgrade (10 Points)</button>
+    <button onclick="buyUpgrade('damage')">Buy Damage Upgrade (20 Points)</button>
+    <button onclick="buyUpgrade('shootSpeed')">Buy Shoot Speed Upgrade (15 Points)</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
