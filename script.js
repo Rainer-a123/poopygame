@@ -4,6 +4,7 @@ const toiletPaperContainer = document.getElementById("toilet-paper-container");
 const pointsDisplay = document.getElementById("points");
 const healthDisplay = document.getElementById("health");
 const waveDisplay = document.getElementById("wave");
+const currentGunDisplay = document.getElementById("current-gun");
 let points = 0;
 let health = 100;
 let playerSpeed = 10; // Slightly slower player
@@ -11,7 +12,81 @@ let keys = { w: false, a: false, s: false, d: false }; // Track key states
 let wave = 1;
 let poopHealth = 1; // Poop health increases with waves
 let shootCooldown = 0; // Cooldown for shooting
-let damage = 1; // Base damage of toilet paper
+let currentGun = "toiletPaper"; // Default gun
+let poopsAlive = 0; // Track number of poops alive
+
+// Gun stats
+const guns = {
+  toiletPaper: {
+    name: "Toilet Paper",
+    damage: 1,
+    fireRate: 10, // Cooldown between shots
+    projectile: "🧻", // Emoji for projectile
+    cost: 0,
+  },
+  rpg: {
+    name: "RPG",
+    damage: 5, // High damage
+    fireRate: 50, // Slow fire rate
+    projectile: "💥", // Emoji for projectile
+    cost: 50,
+    splashDamage: true, // Explosion damage
+  },
+  machineGun: {
+    name: "Machine Gun",
+    damage: 1,
+    fireRate: 2, // Very fast fire rate
+    projectile: "🔫", // Emoji for projectile
+    cost: 30,
+  },
+  laserGun: {
+    name: "Laser Gun",
+    damage: 2, // Moderate damage
+    fireRate: 20, // Moderate fire rate
+    projectile: "🔺", // Emoji for projectile
+    cost: 40,
+    piercing: true, // Pierces through multiple poops
+  },
+  freezeGun: {
+    name: "Freeze Gun",
+    damage: 0, // No damage
+    fireRate: 30, // Slow fire rate
+    projectile: "❄️", // Emoji for projectile
+    cost: 60,
+    freezeDuration: 3000, // Freeze poops for 3 seconds
+  },
+};
+
+// Enemy types
+const enemyTypes = {
+  normal: {
+    health: 1,
+    speed: 2,
+    emoji: "💩",
+  },
+  exploding: {
+    health: 2,
+    speed: 2,
+    emoji: "💩💣",
+    explodeDamage: 3, // Damage dealt on explosion
+  },
+  fast: {
+    health: 1,
+    speed: 4,
+    emoji: "💩💨",
+  },
+  tank: {
+    health: 10,
+    speed: 1,
+    emoji: "💩🛡️",
+  },
+  split: {
+    health: 3,
+    speed: 2,
+    emoji: "💩💩",
+    splitInto: 2, // Splits into 2 smaller poops
+  },
+};
 
 // Player movement
 document.addEventListener("keydown", (e) => {
@@ -49,13 +124,16 @@ function updatePlayerPosition() {
 updatePlayerPosition(); // Start the movement loop
 
 // Spawn poop
-function spawnPoop() {
+function spawnPoop(type = "normal", isBoss = false) {
   const poop = document.createElement("div");
   poop.classList.add("poop");
-  poop.textContent = "💩";
+  if (isBoss) poop.classList.add("boss"); // Add boss class
+  poop.textContent = enemyTypes[type].emoji;
   poop.style.left = `${Math.random() * window.innerWidth}px`;
   poop.style.top = `${Math.random() * window.innerHeight}px`;
-  poop.dataset.health = poopHealth; // Set initial health
+  poop.dataset.health = isBoss ? poopHealth * 5 : enemyTypes[type].health * poopHealth; // Boss has 5x health
+  poop.dataset.type = type; // Store enemy type
+  poop.dataset.isBoss = isBoss; // Mark as boss poop
 
   // Add health bar
   const healthBar = document.createElement("div");
@@ -66,6 +144,7 @@ function spawnPoop() {
   poop.appendChild(healthBar);
 
   poopContainer.appendChild(poop);
+  poopsAlive++;
 
   // Make poop chase the player
   const chasePlayer = setInterval(() => {
@@ -76,7 +155,7 @@ function spawnPoop() {
       playerRect.top - poopRect.top,
       playerRect.left - poopRect.left
     );
-    const speed = 2 + wave * 0.2; // Speed increases with waves
+    const speed = isBoss ? 4 + wave * 0.2 : enemyTypes[type].speed + wave * 0.2; // Boss moves faster
     const xSpeed = Math.cos(angle) * speed;
     const ySpeed = Math.sin(angle) * speed;
 
@@ -90,9 +169,10 @@ function spawnPoop() {
       playerRect.top < poopRect.bottom &&
       playerRect.bottom > poopRect.top
     ) {
-      health -= 10; // Reduce health
+      health -= isBoss ? 20 : 10; // Boss deals more damage
       healthDisplay.textContent = health;
       poop.remove();
+      poopsAlive--;
       clearInterval(chasePlayer);
 
       if (health <= 0) {
@@ -103,43 +183,43 @@ function spawnPoop() {
   }, 20);
 }
 
-// Shoot toilet paper
+// Shoot projectiles
 document.addEventListener("click", (e) => {
   if (shootCooldown > 0) return; // Cooldown check
-  shootCooldown = 10; // Reset cooldown
+  shootCooldown = guns[currentGun].fireRate; // Set cooldown based on gun
 
-  const toiletPaper = document.createElement("div");
-  toiletPaper.classList.add("toilet-paper");
-  toiletPaper.textContent = "🧻";
-  toiletPaper.style.left = `${player.getBoundingClientRect().left + 20}px`; // Start from player
-  toiletPaper.style.top = `${player.getBoundingClientRect().top + 20}px`;
+  const projectile = document.createElement("div");
+  projectile.classList.add("toilet-paper");
+  projectile.textContent = guns[currentGun].projectile;
+  projectile.style.left = `${player.getBoundingClientRect().left + 20}px`; // Start from player
+  projectile.style.top = `${player.getBoundingClientRect().top + 20}px`;
 
   // Calculate direction
   const angle = Math.atan2(
     e.clientY - player.getBoundingClientRect().top,
     e.clientX - player.getBoundingClientRect().left
   );
-  const speed = 5; // Speed of toilet paper
+  const speed = 5; // Speed of projectile
   const xSpeed = Math.cos(angle) * speed;
   const ySpeed = Math.sin(angle) * speed;
 
-  toiletPaperContainer.appendChild(toiletPaper);
+  toiletPaperContainer.appendChild(projectile);
 
-  // Move toilet paper
-  const moveToiletPaper = setInterval(() => {
-    const toiletPaperRect = toiletPaper.getBoundingClientRect();
-    toiletPaper.style.left = `${toiletPaperRect.left + xSpeed}px`;
-    toiletPaper.style.top = `${toiletPaperRect.top + ySpeed}px`;
+  // Move projectile
+  const moveProjectile = setInterval(() => {
+    const projectileRect = projectile.getBoundingClientRect();
+    projectile.style.left = `${projectileRect.left + xSpeed}px`;
+    projectile.style.top = `${projectileRect.top + ySpeed}px`;
 
-    // Remove toilet paper if it goes off-screen
+    // Remove projectile if it goes off-screen
     if (
-      toiletPaperRect.left < 0 ||
-      toiletPaperRect.right > window.innerWidth ||
-      toiletPaperRect.top < 0 ||
-      toiletPaperRect.bottom > window.innerHeight
+      projectileRect.left < 0 ||
+      projectileRect.right > window.innerWidth ||
+      projectileRect.top < 0 ||
+      projectileRect.bottom > window.innerHeight
     ) {
-      toiletPaper.remove();
-      clearInterval(moveToiletPaper);
+      projectile.remove();
+      clearInterval(moveProjectile);
     }
 
     // Check collision with poop
@@ -147,44 +227,141 @@ document.addEventListener("click", (e) => {
     poops.forEach((poop) => {
       const poopRect = poop.getBoundingClientRect();
       if (
-        toiletPaperRect.left < poopRect.right &&
-        toiletPaperRect.right > poopRect.left &&
-        toiletPaperRect.top < poopRect.bottom &&
-        toiletPaperRect.bottom > poopRect.top
+        projectileRect.left < poopRect.right &&
+        projectileRect.right > poopRect.left &&
+        projectileRect.top < poopRect.bottom &&
+        projectileRect.bottom > poopRect.top
       ) {
-        poop.dataset.health -= damage; // Reduce poop health by damage value
+        // Apply damage
+        poop.dataset.health -= guns[currentGun].damage;
         const healthBarInner = poop.querySelector(".poop-health-bar-inner");
-        healthBarInner.style.width = `${(poop.dataset.health / poopHealth) * 100}%`; // Update health bar
+        healthBarInner.style.width = `${(poop.dataset.health / (poop.dataset.isBoss ? poopHealth * 5 : enemyTypes[poop.dataset.type].health * poopHealth)) * 100}%`; // Update health bar
+
+        // Check for splash damage (RPG)
+        if (guns[currentGun].splashDamage) {
+          poops.forEach((otherPoop) => {
+            if (otherPoop !== poop) { // Don't damage the same poop twice
+              const otherPoopRect = otherPoop.getBoundingClientRect();
+              const distance = Math.sqrt(
+                Math.pow(poopRect.left - otherPoopRect.left, 2) +
+                Math.pow(poopRect.top - otherPoopRect.top, 2)
+              );
+              if (distance < 50) { // Splash radius
+                otherPoop.dataset.health -= guns[currentGun].damage;
+                const otherHealthBarInner = otherPoop.querySelector(".poop-health-bar-inner");
+                otherHealthBarInner.style.width = `${(otherPoop.dataset.health / (otherPoop.dataset.isBoss ? poopHealth * 5 : enemyTypes[otherPoop.dataset.type].health * poopHealth)) * 100}%`;
+                if (otherPoop.dataset.health <= 0) {
+                  handlePoopDeath(otherPoop);
+                }
+              }
+            }
+          });
+        }
+
+        // Check for freeze effect (Freeze Gun)
+        if (guns[currentGun].freezeDuration) {
+          poop.style.opacity = "0.5"; // Visual effect for freezing
+          poop.style.pointerEvents = "none"; // Prevent further interactions
+          setTimeout(() => {
+            poop.style.opacity = "1";
+            poop.style.pointerEvents = "auto";
+          }, guns[currentGun].freezeDuration);
+        }
 
         if (poop.dataset.health <= 0) {
-          poop.remove();
-          points += 5; // 5 points per kill
-          pointsDisplay.textContent = points;
+          handlePoopDeath(poop);
         }
-        toiletPaper.remove();
-        clearInterval(moveToiletPaper);
+        projectile.remove();
+        clearInterval(moveProjectile);
       }
     });
   }, 20);
 });
+
+// Handle poop death
+function handlePoopDeath(poop) {
+  const type = poop.dataset.type;
+  poop.remove();
+  points += 5; // 5 points per kill
+  pointsDisplay.textContent = points;
+  poopsAlive--;
+
+  // Handle special enemy effects
+  switch (type) {
+    case "exploding":
+      // Damage nearby poops and player
+      const poops = document.querySelectorAll(".poop");
+      poops.forEach((otherPoop) => {
+        const otherPoopRect = otherPoop.getBoundingClientRect();
+        const distance = Math.sqrt(
+          Math.pow(poop.offsetLeft - otherPoopRect.left, 2) +
+          Math.pow(poop.offsetTop - otherPoopRect.top, 2)
+        );
+        if (distance < 50) { // Explosion radius
+          otherPoop.dataset.health -= enemyTypes.exploding.explodeDamage;
+          const healthBarInner = otherPoop.querySelector(".poop-health-bar-inner");
+          healthBarInner.style.width = `${(otherPoop.dataset.health / (otherPoop.dataset.isBoss ? poopHealth * 5 : enemyTypes[otherPoop.dataset.type].health * poopHealth)) * 100}%`;
+          if (otherPoop.dataset.health <= 0) {
+            handlePoopDeath(otherPoop);
+          }
+        }
+      });
+      break;
+    case "split":
+      // Split into smaller poops
+      for (let i = 0; i < enemyTypes.split.splitInto; i++) {
+        spawnPoop("normal");
+      }
+      break;
+  }
+
+  // Check if wave is cleared
+  if (poopsAlive === 0) {
+    startWave();
+  }
+}
 
 // Cooldown system for shooting
 setInterval(() => {
   if (shootCooldown > 0) shootCooldown--;
 }, 50);
 
-// Wave system
+// Start a new wave
 function startWave() {
   waveDisplay.textContent = wave;
-  for (let i = 0; i < wave * 2; i++) {
-    spawnPoop();
+  const numPoops = wave * 2; // Number of poops increases with wave
+  for (let i = 0; i < numPoops; i++) {
+    const type = getRandomEnemyType(); // Randomly choose enemy type
+    spawnPoop(type);
+  }
+  // Spawn boss poop every 3 waves
+  if (wave % 3 === 0) {
+    spawnPoop("normal", true); // Spawn boss poop
   }
   wave++;
   poopHealth += 1; // Increase poop health each wave
-  setTimeout(startWave, 10000); // Start next wave after 10 seconds
+}
+
+// Get random enemy type
+function getRandomEnemyType() {
+  const types = Object.keys(enemyTypes);
+  return types[Math.floor(Math.random() * types.length)];
 }
 
 startWave(); // Start the first wave
+
+// Buy guns
+function buyGun(gunType) {
+  if (points >= guns[gunType].cost || gunType === "toiletPaper") {
+    points -= guns[gunType].cost;
+    currentGun = gunType;
+    currentGunDisplay.textContent = guns[gunType].name;
+    pointsDisplay.textContent = points;
+    alert(`Equipped ${guns[gunType].name}!`);
+  } else {
+    alert("Not enough points!");
+  }
+}
 
 // Buy upgrades
 function buyUpgrade(type) {
@@ -201,7 +378,7 @@ function buyUpgrade(type) {
     case "damage":
       if (points >= 20) {
         points -= 20;
-        damage += 1; // Increase damage
+        guns[currentGun].damage += 1; // Increase damage for current gun
         alert("Damage upgraded!");
       } else {
         alert("Not enough points!");
@@ -210,7 +387,7 @@ function buyUpgrade(type) {
     case "shootSpeed":
       if (points >= 15) {
         points -= 15;
-        shootCooldown = Math.max(5, shootCooldown - 5); // Faster shooting
+        guns[currentGun].fireRate = Math.max(2, guns[currentGun].fireRate - 3); // Faster shooting
         alert("Shoot speed upgraded!");
       } else {
         alert("Not enough points!");
