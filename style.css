@@ -23,6 +23,20 @@ body {
   user-select: none;
 }
 
+.poop.boss {
+  font-size: 60px; /* Bigger boss poop */
+  animation: glow 1s infinite alternate; /* Glowing effect */
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+  }
+  to {
+    text-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000;
+  }
+}
+
 .poop-health-bar {
   position: absolute;
   width: 30px;
@@ -37,9 +51,9 @@ body {
   background-color: #90ee90; /* Light green health bar */
 }
 
-.toilet-paper {
+.toilet-paper, .rpg, .machine-gun {
   position: absolute;
-  font-size: 20px; /* Toilet paper emoji size */
+  font-size: 20px; /* Projectile size */
   user-select: none;
 }
 
@@ -49,10 +63,26 @@ body {
   left: 10px;
   color: white;
   font-size: 20px;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+  padding: 10px;
+  border-radius: 10px;
+}
+
+#upgrades {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  color: white;
+  font-size: 16px;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+  padding: 10px;
+  border-radius: 10px;
 }
 
 button {
-  margin-top: 10px;
+  margin-top: 5px;
   padding: 5px 10px;
-  font-size: 16px;
+  font-size: 14px;
+  display: block;
+  width: 100%;
 }
